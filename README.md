@@ -61,6 +61,48 @@ VITE_GITHUB_TOKEN=your_personal_github_token
 ## Deployment
 I've done a bit of research and apparently if you want to deploy this project. Platforms like Render or Vercel are needed. Make sure to set up environment variables on the deployment platform, similar to your local .env file.
 
+To deploy this project to GitHub Pages, follow these steps:
+
+1. Install the gh-pages Package:
+Install gh-pages as a development dependency:
+```bash
+npm install gh-pages --save-dev
+Update vite.config.ts:
+```
+
+2. In vite.config.ts, set the base property to your repository name:
+```bash
+typescript
+export default defineConfig({
+  plugins: [react()],
+  base: '/repository-name/', // Replace with your GitHub repository name
+});
+```
+3. Add Deployment Scripts to package.json:
+
+Open package.json and add the following scripts:
+```bash
+json
+"scripts": {
+  "predeploy": "npm run build",
+  "deploy": "gh-pages -d dist"
+  };
+```
+4. Build and Deploy:
+
+Run the following command to deploy the app:
+```bash
+npm run deploy
+```
+
+5. Access the Deployed Site:
+Go to your GitHub repository, navigate to Settings > Pages, and set the source to gh-pages if not already configured.
+Your app will be live at:
+
+```bash
+https://your-username.github.io/repository-name/
+```
+
 ## License
 
 MIT License
