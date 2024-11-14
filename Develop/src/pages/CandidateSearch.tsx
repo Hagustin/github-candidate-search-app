@@ -1,66 +1,69 @@
 import { useState, useEffect } from 'react';
-import { searchGithub } from '../api/API';
 
-type Candidate = {
-  login: string;
-  avatar_url: string;
-  location: string | null;
-  email: string | null;
-  html_url: string;
-  company: string | null;
-};
+import { searchGithub, searchGithubUser } from '../api/API';
+import CandidateCard from '../components/CandidateCard';
+import type { Candidate } from '../interfaces/Candidate.interface';
 
 const CandidateSearch = () => {
-  const [candidate, setCandidate] = useState<Candidate | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [results, setResults] = useState<Candidate[]>([]);
+  const [currentUser, setCurrentUser] = useState<Candidate>({
+    id: null,
+    login: null,
+    email: null,
+    html_url: null,
+    name: null,
+    bio: null,
+    company: null,
+    location: null,
+    avatar_url: null,
+  });
+  const [currentIdx, setCurrentIdx] = useState<number>(0);
 
-  const loadNewCandidate = async () => {
-    console.log("GitHub Token:", import.meta.env.VITE_GITHUB_TOKEN); // Log to verify token
-    console.log("Test Variable:", import.meta.env.VITE_TEST_VARIABLE); // Log test variable
-    setLoading(true);
-    const candidates = await searchGithub();
-    console.log("Fetched candidates:", candidates); // Log to check data
-    if (candidates && candidates.length > 0) {
-      setCandidate(candidates[0]);
+  const searchForSpecificUser = async (user: string) => {
+    const data: Candidate = await searchGithubUser(user);
+
+    setCurrentUser(data);
+  };
+
+  const searchForUsers = async () => {
+    const data: Candidate[] = await searchGithub();
+
+    setResults(data);
+
+    await searchForSpecificUser(data[currentIdx].login || '');
+  };
+
+  const makeDecision = async (isSelected: boolean) => {
+    if (isSelected) {
+      let parsedCandidates: Candidate[] = [];
+      const savedCandidates = localStorage.getItem('savedCandidates');
+      if (typeof savedCandidates === 'string') {
+        parsedCandidates = JSON.parse(savedCandidates);
+      }
+      parsedCandidates.push(currentUser);
+      localStorage.setItem('savedCandidates', JSON.stringify(parsedCandidates));
+    }
+    if (currentIdx + 1 < results.length) {
+      setCurrentIdx(currentIdx + 1);
+      await searchForSpecificUser(results[currentIdx + 1].login || '');
     } else {
-      setCandidate(null); // Show "No more candidates" if list is empty
-    }
-    setLoading(false);
-  };
-
-  const acceptCandidate = () => {
-    if (candidate) {
-      const savedCandidates = JSON.parse(localStorage.getItem('savedCandidates') || '[]');
-      savedCandidates.push(candidate);
-      localStorage.setItem('savedCandidates', JSON.stringify(savedCandidates));
-      loadNewCandidate(); // Load the next candidate after saving
+      setCurrentIdx(0);
+      await searchForUsers();
     }
   };
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Dependency array is correct
   useEffect(() => {
-    loadNewCandidate();
+    searchForUsers();
+    searchForSpecificUser(currentUser.login || '');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
-    <div>
+    <>
       <h1>Candidate Search</h1>
-      {loading ? (
-        <p>Loading candidate...</p>
-      ) : candidate ? (
-        <div>
-          <img src={candidate.avatar_url} alt={candidate.login} width={100} />
-          <p>Name: {candidate.login}</p>
-          <p>Location: {candidate.location || "N/A"}</p>
-          <p>Email: {candidate.email || "N/A"}</p>
-          <a href={candidate.html_url} target="_blank" rel="noopener noreferrer">GitHub Profile</a>
-          <p>Company: {candidate.company || "N/A"}</p>
-          <button onClick={acceptCandidate}>Accept</button>
-          <button onClick={loadNewCandidate}>Skip</button>
-        </div>
-      ) : (
-        <p>No more candidates available</p>
-      )}
-    </div>
+      <CandidateCard currentUser={currentUser} makeDecision={makeDecision} />
+    </>
   );
 };
 
