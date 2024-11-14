@@ -15,10 +15,15 @@ const CandidateSearch = () => {
   const [loading, setLoading] = useState(true);
 
   const loadNewCandidate = async () => {
+    console.log("GitHub Token:", import.meta.env.VITE_GITHUB_TOKEN); // Log to verify token
+    console.log("Test Variable:", import.meta.env.VITE_TEST_VARIABLE); // Log test variable
     setLoading(true);
     const candidates = await searchGithub();
+    console.log("Fetched candidates:", candidates); // Log to check data
     if (candidates && candidates.length > 0) {
       setCandidate(candidates[0]);
+    } else {
+      setCandidate(null); // Show "No more candidates" if list is empty
     }
     setLoading(false);
   };
