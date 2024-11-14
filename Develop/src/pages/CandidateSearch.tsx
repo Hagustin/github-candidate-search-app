@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-
 import { searchGithub, searchGithubUser } from '../api/API';
 import CandidateCard from '../components/CandidateCard';
 import type { Candidate } from '../interfaces/Candidate.interface';
@@ -20,29 +19,43 @@ const CandidateSearch = () => {
   const [currentIdx, setCurrentIdx] = useState<number>(0);
 
   const searchForSpecificUser = async (user: string) => {
-    const data: Candidate = await searchGithubUser(user);
-
-    setCurrentUser(data);
+    if (!user) return;
+    const data = await searchGithubUser(user);
+    if (data) {
+      setCurrentUser({
+        id: data.id || null,
+        login: data.login || 'Unknown',
+        email: data.email || 'N/A',
+        html_url: data.html_url || '#',
+        name: data.name || 'N/A',
+        bio: data.bio || '',
+        company: data.company || '',
+        location: data.location || '',
+        avatar_url: data.avatar_url || '',
+      });
+    }
   };
 
   const searchForUsers = async () => {
-    const data: Candidate[] = await searchGithub();
-
+    const data = await searchGithub();
     setResults(data);
 
-    await searchForSpecificUser(data[currentIdx].login || '');
+    if (data && data.length > 0) {
+      await searchForSpecificUser(data[0].login || '');
+    }
   };
 
   const makeDecision = async (isSelected: boolean) => {
     if (isSelected) {
       let parsedCandidates: Candidate[] = [];
       const savedCandidates = localStorage.getItem('savedCandidates');
-      if (typeof savedCandidates === 'string') {
+      if (savedCandidates) {
         parsedCandidates = JSON.parse(savedCandidates);
       }
       parsedCandidates.push(currentUser);
       localStorage.setItem('savedCandidates', JSON.stringify(parsedCandidates));
     }
+
     if (currentIdx + 1 < results.length) {
       setCurrentIdx(currentIdx + 1);
       await searchForSpecificUser(results[currentIdx + 1].login || '');
@@ -52,11 +65,8 @@ const CandidateSearch = () => {
     }
   };
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: Dependency array is correct
   useEffect(() => {
     searchForUsers();
-    searchForSpecificUser(currentUser.login || '');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

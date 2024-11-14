@@ -5,5 +5,5 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   envDir: './environment',
   plugins: [react()],
-  base: 'github-candidate-search-app',
+  //base: '/github-candidate-search-app/',
 });
